@@ -249,3 +249,17 @@ def sell():
     else:
         # if not post: shows form
         return render_template("sell.html", symbols=symbols)
+
+
+@app.route("/upload", methods=["GET", "POST"])
+def upload():
+    """Upload photo"""
+    if request.method == "GET":
+        return render_template("upload.html")
+
+
+@app.route("/collage", methods=["GET"])
+def collage():
+    """Access collage"""
+    if request.method == "GET":
+        return render_template("collage.html")

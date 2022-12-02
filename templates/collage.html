@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Collage
+{% endblock %}
+
+{% block main %}
+    <form action="/collage" method="post">
+        <div class="mb-3">
+            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="symbol" name="symbol" placeholder="Symbol (e.g. AAPL)" type="text">
+        </div>
+        <button class="btn btn-primary" type="submit">COLLAGE BITCH</button>
+    </form>
+{% endblock %}
