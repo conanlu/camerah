@@ -5,10 +5,12 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/upload" method="post">
+    <form action="/upload" enctype="multipart/form-data" method="POST">
         <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="symbol" name="symbol" placeholder="Symbol (e.g. AAPL)" type="text">
-        </div>
-        <button class="btn btn-primary" type="submit">UPLOAD BITCH</button>
+            <!--- Below Code From https://www.w3schools.com/howto/howto_html_file_upload_button.asp --->
+            <form action="/action_page.php">
+                <input type="file" id="file" name="file" accept="image/*">
+                <input type="submit">
+            </form>
     </form>
 {% endblock %}
