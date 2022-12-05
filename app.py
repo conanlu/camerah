@@ -7,7 +7,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd, password_check
+from helpers import apology, login_required, lookup, usd, password_check, upload_required, new_upload_required
 import datetime
 
 # Configure application
@@ -20,6 +20,8 @@ app.jinja_env.filters["usd"] = usd
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
+
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///camerah.db")
@@ -40,7 +42,9 @@ def after_request(response):
 
 @app.route("/", methods=["GET", "POST"])
 @login_required
+@upload_required
 def index():
+    checkUploaded()
     if request.method == "GET":
         username = db.execute("SELECT username FROM users WHERE id = ?", session["user_id"])[0]["username"]
         pics =  db.execute("SELECT * FROM photos ORDER BY upvotes DESC")
@@ -91,6 +95,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
+        checkUploaded()
         return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
@@ -133,6 +138,8 @@ def register():
         return render_template("register.html")
 
 @app.route("/upload", methods=["GET", "POST"])
+@login_required
+@new_upload_required
 def upload():
     """Upload photo"""
     if request.method == "GET":
@@ -141,6 +148,7 @@ def upload():
        img = request.files.getlist("file")[0]
        img.save(os.path.join("./static/photos", img.filename))
        db.execute("INSERT INTO photos (name, user_id, upvotes) VALUES(?, ?, ?)", img.filename, session["user_id"], 0)
+       checkUploaded()
        return redirect("/")
 
 @app.route("/collage", methods=["GET"])
@@ -157,10 +165,12 @@ def collage():
 
 def checkUploaded():
     x = datetime.datetime.now()
-    dates = db.execute("SELECT date FROM users WHERE id = ?", session["user_id"])
+    dates = db.execute("SELECT date FROM photos WHERE user_id = ?", session["user_id"])
     session["uploaded"] = False
- 
+    print(type(dates))
     for d in dates:
-        if d["dates"].day == x.day:
-            session["uploaded"] = True
-            break
+        tmp = x.strftime("%Y")+"-"+x.strftime("%m")+"-"+x.strftime("%d")
+        if tmp in d["date"]:
+             session["uploaded"] = True
+        else:
+            session["uploaded"] = False

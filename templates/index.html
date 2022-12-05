@@ -48,7 +48,7 @@
             {% if not key in likes %}
                 <button class="btn btn-primary" type="submit" value={{key}} name="upvote"> like! </button>
             {% endif %}
-            {{value}} people liked this picture!
+            {{value}} {{ 'person' if value == 1 else 'people' }} liked this picture!
         </form>
         <br>
     {% endfor %}
