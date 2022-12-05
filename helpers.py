@@ -2,7 +2,7 @@ import os
 import requests
 import urllib.parse
 
-from flask import redirect, render_template, request, session
+from flask import redirect, render_template, request, session, flash
 from functools import wraps
 
 
@@ -30,7 +30,27 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("user_id") is None:
+            flash("You'll need to log in!")
             return redirect("/login")
+        return f(*args, **kwargs)
+    return decorated_function
+
+def upload_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("uploaded") is False:
+            flash("You'll need to upload the snapshot for today!")
+            return redirect("/upload")
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def new_upload_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("uploaded") is True:
+            flash("You've already uploaded a snapshot for today!")
+            return redirect("/")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -78,10 +98,3 @@ def password_check(str):
     # if not found, return FAIL
     return False
 
-def upload_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get("uploaded") is False:
-            return redirect("/upload")
-        return f(*args, **kwargs)
-    return decorated_function
