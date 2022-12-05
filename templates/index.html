@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block main %}
+<<<<<<< HEAD
     <h2>{{ username }}'s Portfolio BOO! </h2>
     <table class="table">
         <thead>
@@ -39,4 +40,17 @@
 
 
 
+=======
+    <h2>{{ username }}'s tour of campus! <3</h2>
+    {% for key, value in imgs.items() %}
+        <form action="/" method="post">
+            <img src= {{prefix + key}} width="400" height="400" alt="Photo">
+            {% if not key in likes %}
+                <button class="btn btn-primary" type="submit" value={{key}} name="upvote"> like! </button>
+            {% endif %}
+            {{value}} people liked this picture!
+        </form>
+        <br>
+    {% endfor %}
+>>>>>>> c06aafb5933cf4f0f35641d0c75b3eba472d42be
 {% endblock %}

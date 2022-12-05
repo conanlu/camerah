@@ -78,3 +78,10 @@ def password_check(str):
     # if not found, return FAIL
     return False
 
+def upload_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("uploaded") is False:
+            return redirect("/upload")
+        return f(*args, **kwargs)
+    return decorated_function

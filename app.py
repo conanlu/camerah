@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd, password_check
-from datetime import time
+import datetime
 
 # Configure application
 app = Flask(__name__)
@@ -38,13 +38,29 @@ def after_request(response):
     return response
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    """Show portfolio of stocks"""
-    # displays username
-    username = db.execute("SELECT username FROM users WHERE id = ?", session["user_id"])[0]["username"]
-    return render_template("index.html", username=username)
+    if request.method == "GET":
+        username = db.execute("SELECT username FROM users WHERE id = ?", session["user_id"])[0]["username"]
+        pics =  db.execute("SELECT * FROM photos ORDER BY upvotes DESC")
+        liked = db.execute("SELECT name FROM photos WHERE id IN (SELECT photo_id FROM likes WHERE user_id = ?)", session["user_id"])
+        if len(pics) != 0:
+            imgs = dict()
+            for pic in pics:
+                imgs[pic.get("name")] = pic.get("upvotes")
+            likes = list()
+            for like in liked:
+                likes.append(like.get("name"))
+            return render_template("index.html", username=username, imgs=imgs, prefix = "static/photos/", likes=likes)
+        return render_template("index.html", username=username)
+    else:
+        name = request.form.get("upvote")
+        photoid = db.execute("SELECT id FROM photos WHERE name = ?", name)[0]["id"]
+        db.execute("UPDATE photos SET upvotes = upvotes + 1 WHERE name = ?", name)
+        db.execute("INSERT INTO likes (user_id, photo_id) VALUES(?, ?)", session["user_id"], photoid)
+        return redirect("/")
+        
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -131,4 +147,20 @@ def upload():
 def collage():
     """Access collage"""
     if request.method == "GET":
-        return render_template("collage.html")
+        pics =  db.execute("SELECT name FROM photos ORDER BY upvotes DESC LIMIT 9")
+        if len(pics) < 9:
+            return render_template("nocollage.html")
+        imgs = list()
+        for pic in pics:
+            imgs.append(pic.get("name"))
+        return render_template("collage.html", imgs=imgs, prefix = "static/photos/")
+
+def checkUploaded():
+    x = datetime.datetime.now()
+    dates = db.execute("SELECT date FROM users WHERE id = ?", session["user_id"])
+    session["uploaded"] = False
+ 
+    for d in dates:
+        if d["dates"].day == x.day:
+            session["uploaded"] = True
+            break
