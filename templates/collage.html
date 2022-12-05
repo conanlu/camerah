@@ -5,10 +5,21 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/collage" method="post">
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="symbol" name="symbol" placeholder="Symbol (e.g. AAPL)" type="text">
+    <div class="row">
+        <div class="column">
+            {% for i in [0,1,2] %}
+                <img src= {{prefix + imgs[i]}}>
+            {% endfor %}
         </div>
-        <button class="btn btn-primary" type="submit">COLLAGE BITCH</button>
-    </form>
+        <div class="column">
+            {% for i in [3,4,5] %}
+                <img src= {{prefix + imgs[i]}}>
+            {% endfor %}
+        </div>
+        <div class="column">
+            {% for i in [6,7,8] %}
+                <img src= {{prefix + imgs[i]}}>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
