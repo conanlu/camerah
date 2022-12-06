@@ -9,6 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd, password_check, upload_required, new_upload_required
 import datetime
+import cv2
 
 # Configure application
 app = Flask(__name__)
@@ -45,10 +46,11 @@ def after_request(response):
 @upload_required
 def index():
     checkUploaded()
-    if request.method == "GET":
+    if request.method == "GET": 
         username = db.execute("SELECT username FROM users WHERE id = ?", session["user_id"])[0]["username"]
-        pics =  db.execute("SELECT * FROM photos ORDER BY upvotes DESC")
-        liked = db.execute("SELECT name FROM photos WHERE id IN (SELECT photo_id FROM likes WHERE user_id = ?)", session["user_id"])
+        today = getToday()
+        pics =  db.execute("SELECT * FROM photos WHERE date LIKE ? ORDER BY upvotes DESC", today+"%")
+        liked = db.execute("SELECT name FROM photos WHERE id IN (SELECT photo_id FROM likes WHERE user_id = ?)", session["user_id"])        
         if len(pics) != 0:
             imgs = dict()
             for pic in pics:
@@ -146,8 +148,11 @@ def upload():
         return render_template("upload.html")
     else:
        img = request.files.getlist("file")[0]
-       img.save(os.path.join("./static/photos", img.filename))
-       db.execute("INSERT INTO photos (name, user_id, upvotes) VALUES(?, ?, ?)", img.filename, session["user_id"], 0)
+       # Code from https://bobbyhadz.com/blog/python-replace-spaces-with-underscores
+       imgname = img.filename.replace(' ', '_')
+       img.save(os.path.join("./static/photos", imgname))
+       crop(os.path.join("./static/photos", imgname))
+       db.execute("INSERT INTO photos (name, user_id, upvotes) VALUES(?, ?, ?)", imgname, session["user_id"], 0)
        checkUploaded()
        return redirect("/")
 
@@ -164,13 +169,26 @@ def collage():
         return render_template("collage.html", imgs=imgs, prefix = "static/photos/")
 
 def checkUploaded():
-    x = datetime.datetime.now()
+    x = getToday()
     dates = db.execute("SELECT date FROM photos WHERE user_id = ?", session["user_id"])
     session["uploaded"] = False
-    print(type(dates))
     for d in dates:
-        tmp = x.strftime("%Y")+"-"+x.strftime("%m")+"-"+x.strftime("%d")
-        if tmp in d["date"]:
-             session["uploaded"] = True
-        else:
-            session["uploaded"] = False
+        if x in d["date"]:
+            session["uploaded"] = True
+            return True
+    return False
+
+def getToday():
+    x = datetime.datetime.now(datetime.timezone.utc)
+    formatted = x.strftime("%Y")+"-"+x.strftime("%m")+"-"+x.strftime("%d")
+    return formatted
+
+def crop(dst):
+    frame = cv2.imread(dst)
+    os.remove(dst)
+    height, width, layers = frame.shape
+    if height > width:
+        frame = frame[:width, :width]
+    else:
+        frame = frame[:height, :height]
+    cv2.imwrite(dst, frame)

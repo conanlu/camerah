@@ -6,15 +6,15 @@ nav .navbar-brand
 /* Colors for brand */
 nav .navbar-brand .blue
 {
-    color: #537fbe;
+    color: #f274ac;
 }
 nav .navbar-brand .red
 {
-    color: #ea433b;
+    color: #A51C30;
 }
 
-nav .navbar-brand
-{
+.navbar{
+    font-size: large;
     font-family: Serif;
 }
 
@@ -35,4 +35,29 @@ nav .navbar-brand
   .column img {
     margin-top: 8px;
     vertical-align: middle;
+  }
+
+/*  Code from https://www.w3schools.com/css/css3_gradients.asp */
+  #background {
+    font-family: Serif;
+  }
+
+  #pic {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+  }
+
+  #likebutton {
+    height: 50px;
+    width: 50px;
+  } 
+
+  .title {
+    color:#f274ac;
   }
