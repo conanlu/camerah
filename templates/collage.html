@@ -6,26 +6,9 @@
 
 {% block main %}
 
-<object data="media/drop.avi" width="360" height="250"> 
-    <param name="src" value="media/drop.avi" /> 
-    <embed type="video/x-ms-wm" src="media/drop.avi" width="360" height="250"></embed>
-</object>
+    <h2 class="title">our collective memory</h2>
+    {% for i in imgs %}
+        <img src= {{prefix + i}} id="collagepic">
+    {% endfor %}
 
-    <div class="row">
-        <div class="column">
-            {% for i in [0,1,2] %}
-                <img src= {{prefix + imgs[i]}}>
-            {% endfor %}
-        </div>
-        <div class="column">
-            {% for i in [3,4,5] %}
-                <img src= {{prefix + imgs[i]}}>
-            {% endfor %}
-        </div>
-        <div class="column">
-            {% for i in [6,7,8] %}
-                <img src= {{prefix + imgs[i]}}>
-            {% endfor %}
-        </div>
-    </div>
 {% endblock %}

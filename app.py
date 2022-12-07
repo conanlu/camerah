@@ -95,9 +95,9 @@ def index():
             for like in liked:
                 likes.append(like.get("name")) # create list of photos posted today and liked by user
             # send username, images posted today, prefix for all photos, and list of liked images to index.html
-            return render_template("index.html", username=username, imgs=imgs, prefix = PREFIX, likes=likes)
+            return render_template("index.html", username=username, imgs=imgs, prefix = PREFIX, likes=likes, location=LOCATION)
         # if no photos have been posted today, just send username to index.html
-        return render_template("index.html", username=username)
+        return render_template("index.html", username=username, location=LOCATION)
     else: # if the user clicked a "like" button
         # get name of photo user liked
         name = request.form.get("upvote")
@@ -212,7 +212,7 @@ def collage():
     """Access collage"""
     if request.method == "GET":
         video("static/photos", 3)
-        pics =  db.execute("SELECT name FROM photos ORDER BY upvotes DESC")
+        pics =  db.execute("SELECT name FROM photos ORDER BY date DESC")
         if len(pics) == 0:
             return render_template("nocollage.html")
         imgs = list()

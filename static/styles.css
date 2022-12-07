@@ -16,6 +16,7 @@ nav .navbar-brand .red
 .navbar{
     font-size: large;
     font-family: Serif;
+    color: #f274ac;
 }
 
   #background {
@@ -40,6 +41,7 @@ nav .navbar-brand .red
 
   .title {
     color:#f274ac;
+    font-family: Serif;
   }
 
   #apology{
@@ -52,4 +54,13 @@ nav .navbar-brand .red
 
   #errormessage {
     color:#A51C30
+  }
+
+  #collagepic {
+    width: 324px;
+    height: 324px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-right: 20px;
+    padding-left: 20px;
   }
