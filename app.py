@@ -238,7 +238,7 @@ def crop(dst):
         frame = frame[:width, :width]
     else:
         frame = frame[:height, :height]
-    cv2.resize(frame, (IMG_DIMENSION, IMG_DIMENSION), cv2.INTER_AREA)
+    frame = cv2.resize(frame, (IMG_DIMENSION, IMG_DIMENSION), cv2.INTER_AREA)
     cv2.imwrite(dst, frame)
 
 def video(image_folder, fps):
