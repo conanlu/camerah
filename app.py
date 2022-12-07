@@ -272,11 +272,3 @@ def collage():
         for pic in pics:
             imgs.append(pic.get("name"))
         return render_template("collage.html", imgs=imgs, prefix=PREFIX)
-
-
-
-
-
-
-
-
