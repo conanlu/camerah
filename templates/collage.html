@@ -5,21 +5,9 @@
 {% endblock %}
 
 {% block main %}
-    <div class="row">
-        <div class="column">
-            {% for i in [0,1,2] %}
-                <img src= {{prefix + imgs[i]}}>
-            {% endfor %}
-        </div>
-        <div class="column">
-            {% for i in [3,4,5] %}
-                <img src= {{prefix + imgs[i]}}>
-            {% endfor %}
-        </div>
-        <div class="column">
-            {% for i in [6,7,8] %}
-                <img src= {{prefix + imgs[i]}}>
-            {% endfor %}
-        </div>
+    <div>
+        {% for i in imgs %}
+            <img src= {{prefix + imgs[i]}}>
+        {% endfor %}
     </div>
 {% endblock %}

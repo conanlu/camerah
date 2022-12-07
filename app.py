@@ -26,11 +26,8 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///camerah.db")
-
-# Make sure API key is set
-if not os.environ.get("API_KEY"):
-    raise RuntimeError("API_KEY not set")
-
+# Create variable specifying prefix for where all photos are stored
+PREFIX = "static/photos/"
 
 @app.after_request
 def after_request(response):
@@ -43,28 +40,40 @@ def after_request(response):
 
 @app.route("/", methods=["GET", "POST"])
 @login_required
+# Require user to upload an image before viewing feed for the day
 @upload_required
 def index():
     checkUploaded()
-    if request.method == "GET": 
+    if request.method == "GET": # If user is loading home page
+        # get username
         username = db.execute("SELECT username FROM users WHERE id = ?", session["user_id"])[0]["username"]
+        # get current day
         today = getToday()
+        # get all pictures taken today
         pics =  db.execute("SELECT * FROM photos WHERE date LIKE ? ORDER BY upvotes DESC", today+"%")
+        # get all pictures liked by the user
         liked = db.execute("SELECT name FROM photos WHERE id IN (SELECT photo_id FROM likes WHERE user_id = ?)", session["user_id"])        
+        # if there are pictures posted today, add to dictionary that links uploaded photo names (keys) and upvotes (values)
         if len(pics) != 0:
             imgs = dict()
             for pic in pics:
                 imgs[pic.get("name")] = pic.get("upvotes")
             likes = list()
             for like in liked:
-                likes.append(like.get("name"))
-            return render_template("index.html", username=username, imgs=imgs, prefix = "static/photos/", likes=likes)
+                likes.append(like.get("name")) # create list of photos posted today and liked by user
+            # send username, images posted today, prefix for all photos, and list of liked images to index.html
+            return render_template("index.html", username=username, imgs=imgs, prefix = PREFIX, likes=likes)
+        # if no photos have been posted today, just send username to index.html
         return render_template("index.html", username=username)
-    else:
+    else: # if the user clicked a "like" button
+        # get name of photo user liked
         name = request.form.get("upvote")
+        # get id of photo user liked
         photoid = db.execute("SELECT id FROM photos WHERE name = ?", name)[0]["id"]
+        # update photos and likes databases with user's like
         db.execute("UPDATE photos SET upvotes = upvotes + 1 WHERE name = ?", name)
         db.execute("INSERT INTO likes (user_id, photo_id) VALUES(?, ?)", session["user_id"], photoid)
+        # load home page
         return redirect("/")
         
 
@@ -123,6 +132,9 @@ def register():
         username = request.form.get("username")
         password = request.form.get("password")
         confirmation = request.form.get("confirmation")
+        if not username or not password or not confirmation:
+            return apology("must fill out all fields")
+
         if password != confirmation:
             return apology("passwords must match")
 
@@ -144,14 +156,20 @@ def register():
 @new_upload_required
 def upload():
     """Upload photo"""
-    if request.method == "GET":
+    if request.method == "GET": # if user clicked "upload" button
         return render_template("upload.html")
-    else:
-       img = request.files.getlist("file")[0]
+    else: # if user is trying to upload file
+       img = request.files.getlist("file")[0] # get image from the upload html
+       if not img:
+        return apology("must upload photo")
        # Code from https://bobbyhadz.com/blog/python-replace-spaces-with-underscores
+       # spaces in file names cause problems, so replace all spaces with underscores before progressing
        imgname = img.filename.replace(' ', '_')
-       img.save(os.path.join("./static/photos", imgname))
-       crop(os.path.join("./static/photos", imgname))
+       # save image in static/photos
+       img.save(os.path.join(PREFIX, imgname))
+       # crop image to look uniform on feed
+       crop(os.path.join(PREFIX, imgname))
+       # insert photos into database
        db.execute("INSERT INTO photos (name, user_id, upvotes) VALUES(?, ?, ?)", imgname, session["user_id"], 0)
        checkUploaded()
        return redirect("/")
@@ -160,13 +178,13 @@ def upload():
 def collage():
     """Access collage"""
     if request.method == "GET":
-        pics =  db.execute("SELECT name FROM photos ORDER BY upvotes DESC LIMIT 9")
-        if len(pics) < 9:
+        pics =  db.execute("SELECT name FROM photos ORDER BY upvotes DESC")
+        if len(pics) == 0:
             return render_template("nocollage.html")
         imgs = list()
         for pic in pics:
             imgs.append(pic.get("name"))
-        return render_template("collage.html", imgs=imgs, prefix = "static/photos/")
+        return render_template("collage.html", imgs=imgs, prefix = PREFIX)
 
 def checkUploaded():
     x = getToday()

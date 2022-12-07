@@ -5,6 +5,15 @@
 {% endblock %}
 
 {% block main %}
-    <!-- https://memegen.link/ -->
-    <img alt="{{ top }}" class="border img-fluid" src="http://memegen.link/custom/{{ top | urlencode }}/{{ bottom | urlencode }}.jpg?alt=https://i.imgur.com/CsCgN7Ll.png&width=400" title="{{ top }}">
+    <div id="apology">
+        <h2 id="error">
+            Oops! You're encountered a {{top}} error: <br>
+        </h2>    
+        <h3 id="errormessage">
+            {{bottom}}
+            <br><br>
+        </h3>
+        <!-- Gif via https://tenor.com/view/broken-heart-heart-heartache-heartbreak-gif-18795272-->
+        <img src="static/icons/brokenheart.gif" width="500" height="400" alt="Broken Heart" id="pic">
+    </div>
 {% endblock %}

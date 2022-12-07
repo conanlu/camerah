@@ -7,14 +7,18 @@
 {% block main %}
 <div id="background">
     <h2 class="title">{{ username }}'s tour of campus! <3</h2>
+    <!-- For each photo uploaded today -->
     {% for key, value in imgs.items() %}
         <form action="/" method="post">
             <div id="border">
-                <img src= {{prefix + key}} width="400" height="400" alt="Photo" id="pic">
+                <!-- Displaying all photos -->
+                <img src= {{prefix + key}} width="400" height="400" alt="Photo Submitted by User" id="pic">
+                <!-- If photo has not yet been liked by user, display heart button -->
                 {% if not key in likes%}
                     <!---heart from https://tenor.com/view/animation-gif-8779179-->
-                    <input type="image" value={{key}} name="upvote" id="likebutton" src="./static/photos/heart.gif"> </button>
+                    <input type="image" value={{key}} name="upvote" alt="Heart Button" id="likebutton" src="./static/icons/heart.gif"> </button>
                 {% endif %}
+                <!-- Display current number of likes -->
                     {{value}} {{'like' if value == 1 else 'likes'}} 
                 <br> <br>
             </div>
