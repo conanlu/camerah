@@ -5,6 +5,13 @@
 {% endblock %}
 
 {% block main %}
+
+
+<object data="media/drop.avi" width="360" height="250"> 
+    <param name="src" value="media/drop.avi" /> 
+    <embed type="video/x-ms-wm" src="media/drop.avi" width="360" height="250"></embed>
+</object>
+
     <div class="row">
         <div class="column">
             {% for i in [0,1,2] %}
