@@ -4,14 +4,11 @@ from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
-
 from helpers import apology, login_required, password_check, upload_required, new_upload_required
 import datetime
 import cv2
-
 import firebase_admin
 from firebase_admin import credentials, firestore
-
 import sys
 import random
 
