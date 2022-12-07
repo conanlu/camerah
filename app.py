@@ -1,12 +1,11 @@
 import os
-
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd, password_check, upload_required, new_upload_required
+from helpers import apology, login_required, password_check, upload_required, new_upload_required
 import datetime
 import cv2
 
@@ -19,8 +18,6 @@ import random
 # Configure application
 app = Flask(__name__)
 
-# Custom filter
-app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -34,33 +31,89 @@ db = SQL("sqlite:///camerah.db")
 PREFIX = "static/photos/"
 
 
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+
+# CONSTANTS: developers can change as they see fit
+
+IMG_DIMENSION = 1080 # Crops or expands each photos to fit 1080 x 1080 frame.
+VIDEO_FPS = 3
+LOCATION = "Placeholder" # Location of the day
+NUM_LOCATIONS = 3 # Number of normal locations in database. Currently 3
 
 
-fdb = firestore.client()  # this connects to our Firestore database
-collection = fdb.collection('locations')  # opens 'places' collection
+# UTILITY FUNCTIONS 
 
+#Cropping a photo
+def crop(dst):
+    frame = cv2.imread(dst)
+    os.remove(dst)
+    height, width, layers = frame.shape
+    if height > width:
+        frame = frame[:width, :width]
+    else:
+        frame = frame[:height, :height]
+    frame = cv2.resize(frame, (IMG_DIMENSION, IMG_DIMENSION), cv2.INTER_AREA)
+    cv2.imwrite(dst, frame)
+
+# Getting the date today in YYYY-MM-DD format
 def getToday():
     x = datetime.datetime.now(datetime.timezone.utc)
     formatted = x.strftime("%Y")+"-"+x.strftime("%m")+"-"+x.strftime("%d")
     return formatted
 
 
-LOCATION = "Placeholder"
-NUM_LOCATIONS = 3
+# Creates a video of all images in a folder with 
+def video(image_folder):
+    video_name = "static/video.avi"
+    images = [img for img in os.listdir(image_folder) if
+              img.endswith(".png") or img.endswith(".jpg") or img.endswith(".PNG") or img.endswith(".JPG") or img.endswith(".JPEG") or img.endswith(".jpeg")]
+    frame = cv2.imread(os.path.join(image_folder, images[0]))
+    frame = cv2.flip(frame, 1)
+    height, width, layers = frame.shape
+    ratio = 1.0 * height / width
+    video = cv2.VideoWriter(video_name, 0, VIDEO_FPS, (width, height))
 
+    for image in images:
+        tmp = cv2.imread(os.path.join(image_folder, image))
+        tmp = cv2.flip(tmp, 1)
+        video.write(tmp)
+
+    cv2.destroyAllWindows()
+    video.release()
+
+# Checks if user uploaded today. This value is used for @upload_required
+def checkUploaded():
+    x = getToday()
+    dates = db.execute("SELECT date FROM photos WHERE user_id = ?", session["user_id"])
+    session["uploaded"] = False
+    for d in dates:
+        if x in d["date"]:
+            session["uploaded"] = True
+            return True
+    return False
+
+
+# Connecting to Firebase
+
+cred = credentials.Certificate("serviceAccountKey.json") # Replace this with your path to the Firestore key
+firebase_admin.initialize_app(cred)
+
+
+fdb = firestore.client()  # this connects to our Firestore database
+collection = fdb.collection('locations')  # opens 'places' collection
+
+
+# Initializing location for the day
+# If there is a "special" location for a particular day, then loads that (e.g. CS50 FAIR, 2022-12-07)
+# Otherwise, loops through normal locations
+today = int(datetime.datetime.now(datetime.timezone.utc).strftime("%d")) * 1000 + int(datetime.datetime.now(datetime.timezone.utc).strftime("%d"))
 doc = collection.document(getToday()).get()
 if doc.exists:
     LOCATION = doc.to_dict()['name']
 else:
-    doc = collection.document(str(random.randint(1, NUM_LOCATIONS))).get()
+    doc = collection.document(str(today % NUM_LOCATIONS + 1)).get()
     LOCATION = doc.to_dict()['name']
 
 
-print(LOCATION)
-
-IMG_DIMENSION = 1080
 
 @app.after_request
 def after_request(response):
@@ -113,10 +166,8 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-
     # Forget any user_id
     session.clear()
-
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
@@ -175,6 +226,7 @@ def register():
         if username_taken:
             return apology("username taken")
 
+        # our additional requirement for extra security: password must have 8 characters, one of which must be number
         if not password_check(password):
             return apology("passwords must have at least 8 characters, at least one of which must be a number")
 
@@ -211,50 +263,23 @@ def upload():
 def collage():
     """Access collage"""
     if request.method == "GET":
-        video("static/photos", 3)
+
+        # create a new "video.avi" file based on photos
+        video("static/photos")
+
+        # load photos
         pics =  db.execute("SELECT name FROM photos ORDER BY date DESC")
         if len(pics) == 0:
             return render_template("nocollage.html")
         imgs = list()
         for pic in pics:
             imgs.append(pic.get("name"))
-        return render_template("collage.html", imgs=imgs, prefix = PREFIX)
+        return render_template("collage.html", imgs=imgs, prefix=PREFIX)
 
-def checkUploaded():
-    x = getToday()
-    dates = db.execute("SELECT date FROM photos WHERE user_id = ?", session["user_id"])
-    session["uploaded"] = False
-    for d in dates:
-        if x in d["date"]:
-            session["uploaded"] = True
-            return True
-    return False
 
-def crop(dst):
-    frame = cv2.imread(dst)
-    os.remove(dst)
-    height, width, layers = frame.shape
-    if height > width:
-        frame = frame[:width, :width]
-    else:
-        frame = frame[:height, :height]
-    cv2.resize(frame, (IMG_DIMENSION, IMG_DIMENSION), cv2.INTER_AREA)
-    cv2.imwrite(dst, frame)
 
-def video(image_folder, fps):
-    video_name = "video.avi"
-    images = [img for img in os.listdir(image_folder) if
-              img.endswith(".png") or img.endswith(".jpg") or img.endswith(".PNG") or img.endswith(".JPG")]
-    frame = cv2.imread(os.path.join(image_folder, images[0]))
-    frame = cv2.flip(frame, 1)
-    height, width, layers = frame.shape
-    ratio = 1.0 * height / width
-    video = cv2.VideoWriter(video_name, 0, fps, (width, height))
 
-    for image in images:
-        yuh = cv2.imread(os.path.join(image_folder, image))
-        yuh = cv2.flip(yuh, 1)
-        video.write(yuh)
 
-    cv2.destroyAllWindows()
-    video.release()
+
+
+
