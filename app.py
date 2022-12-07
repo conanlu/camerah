@@ -1,4 +1,3 @@
-# personal touches: requiring at least 8 characters and 1 number for password to be valid, also displaying user's username above portfolio
 import os
 
 from cs50 import SQL
@@ -10,6 +9,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import apology, login_required, lookup, usd, password_check, upload_required, new_upload_required
 import datetime
 import cv2
+
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+import sys
+import random
 
 # Configure application
 app = Flask(__name__)
@@ -23,11 +28,39 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 
-
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///camerah.db")
 # Create variable specifying prefix for where all photos are stored
 PREFIX = "static/photos/"
+
+
+cred = credentials.Certificate("/Users/juliapoulson/Downloads/serviceAccountKey.json")
+firebase_admin.initialize_app(cred)
+
+
+fdb = firestore.client()  # this connects to our Firestore database
+collection = fdb.collection('locations')  # opens 'places' collection
+
+def getToday():
+    x = datetime.datetime.now(datetime.timezone.utc)
+    formatted = x.strftime("%Y")+"-"+x.strftime("%m")+"-"+x.strftime("%d")
+    return formatted
+
+
+LOCATION = "Placeholder"
+NUM_LOCATIONS = 3
+
+doc = collection.document(getToday()).get()
+if doc.exists:
+    LOCATION = doc.to_dict()['name']
+else:
+    doc = collection.document(str(random.randint(1, NUM_LOCATIONS))).get()
+    LOCATION = doc.to_dict()['name']
+
+
+print(LOCATION)
+
+IMG_DIMENSION = 1080
 
 @app.after_request
 def after_request(response):
@@ -157,7 +190,7 @@ def register():
 def upload():
     """Upload photo"""
     if request.method == "GET": # if user clicked "upload" button
-        return render_template("upload.html")
+        return render_template("upload.html", location=LOCATION)
     else: # if user is trying to upload file
        img = request.files.getlist("file")[0] # get image from the upload html
        if not img:
@@ -178,6 +211,7 @@ def upload():
 def collage():
     """Access collage"""
     if request.method == "GET":
+        video("static/photos", 3)
         pics =  db.execute("SELECT name FROM photos ORDER BY upvotes DESC")
         if len(pics) == 0:
             return render_template("nocollage.html")
@@ -196,11 +230,6 @@ def checkUploaded():
             return True
     return False
 
-def getToday():
-    x = datetime.datetime.now(datetime.timezone.utc)
-    formatted = x.strftime("%Y")+"-"+x.strftime("%m")+"-"+x.strftime("%d")
-    return formatted
-
 def crop(dst):
     frame = cv2.imread(dst)
     os.remove(dst)
@@ -209,4 +238,23 @@ def crop(dst):
         frame = frame[:width, :width]
     else:
         frame = frame[:height, :height]
+    cv2.resize()
     cv2.imwrite(dst, frame)
+
+def video(image_folder, fps):
+    video_name = "video.avi"
+    images = [img for img in os.listdir(image_folder) if
+              img.endswith(".png") or img.endswith(".jpg") or img.endswith(".PNG") or img.endswith(".JPG")]
+    frame = cv2.imread(os.path.join(image_folder, images[0]))
+    frame = cv2.flip(frame, 1)
+    height, width, layers = frame.shape
+    ratio = 1.0 * height / width
+    video = cv2.VideoWriter(video_name, 0, fps, (width, height))
+
+    for image in images:
+        yuh = cv2.imread(os.path.join(image_folder, image))
+        yuh = cv2.flip(yuh, 1)
+        video.write(yuh)
+
+    cv2.destroyAllWindows()
+    video.release()
